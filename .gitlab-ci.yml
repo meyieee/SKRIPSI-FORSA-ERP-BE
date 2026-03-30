@@ -1,0 +1,21 @@
+stages:
+  - setup
+  - test
+  - deploy
+
+setup:
+  stage: setup
+  script:
+    - npm ci
+
+test:
+  stage: test
+  script:
+    - npm test
+
+deploy:
+  stage: deploy
+  script:
+    - ./deploy.sh
+  only:
+    - main

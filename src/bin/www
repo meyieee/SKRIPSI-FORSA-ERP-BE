@@ -1,0 +1,87 @@
+let app = require('../app');
+let debug = require('debug')('myapp:server');
+let http = require('http');
+let https = require('https');
+let socketapi = require("../config/socketapi");
+const dotenv = require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+
+let server = http.createServer(app);
+let port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+// --- CONFIGURATION FOR HTTPS ---
+// const absolutePath = '/etc/letsencrypt/live/be.forsa.id';
+
+// const privateKeyPath = path.join(absolutePath, 'privkey.pem');
+// const fullChainPath = path.join(absolutePath, 'fullchain.pem');
+
+// const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
+// const fullChain = fs.readFileSync(fullChainPath, 'utf8');
+
+// const credentials = { key: privateKey, cert: fullChain };
+// let httpsServer = https.createServer(credentials, app);
+
+// --- SOCKET.IO CONFIG ---
+socketapi.io.attach(server, {
+  transports: ["websocket", "polling"],
+  cors: {
+    origin: process.env.FRONT_END_URL,
+    methods: ["GET", "POST", "PUT", "DELETE"], // Metode yang diizinkan
+  }
+});
+
+server.listen(port, '0.0.0.0', () => console.log(`HTTP server running on port ${port}`));
+server.on('error', onError);
+server.on('listening', onListening);
+
+// --- CONFIGURATION FOR HTTPS ---
+// httpsServer.listen(8443, () => console.log(`HTTPS server running on https://be.forsa.id`));
+// httpsServer.on('error', onError);
+// httpsServer.on('listening', onListening);
+
+function normalizePort(val) {
+  let port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    return val;
+  }
+
+  if (port >= 0) {
+    return port;
+  }
+
+  return false;
+}
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  let bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+function onListening() {
+  let addr = server.address();
+  let bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  debug('Listening on ' + bind);
+}
