@@ -62,6 +62,12 @@ class fia_res_online_feeds_tasks extends Model {
       targetKey: "id_number",
       as: "assignedTo",
     });
+
+    this.hasMany(models.fia_res_online_feeds_tasks_messages, {
+      foreignKey: "task_id",
+      sourceKey: "id",
+      as: "messages",
+    });
   }
 }
 

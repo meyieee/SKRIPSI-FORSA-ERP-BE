@@ -53,7 +53,17 @@ class fia_res_online_feeds_tasks_messages extends Model {
   }
 
   static associate(models) {
-    // nanti kalau mau relasi ke tabel tasks / users, bisa ditaruh di sini
+    this.belongsTo(models.fia_res_online_feeds_tasks, {
+      foreignKey: "task_id",
+      targetKey: "id",
+      as: "task",
+    });
+
+    this.belongsTo(models.tbl_emp_regs, {
+      foreignKey: "sender_id",
+      targetKey: "id_number",
+      as: "senderEmployee",
+    });
   }
 }
 

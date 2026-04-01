@@ -1,5 +1,7 @@
 const ApprovalController = require("../controllers/ApprovalController");
 const RequestsController = require("../controllers/RequestsController");
+const OnlineRequestFeedsController = require("../controllers/OnlineRequestFeedsController");
+const OnlineTaskFeedsController = require("../controllers/OnlineTaskFeedsController");
 const TaskMessagesController = require("../controllers/TaskMessagesController");
 const RosterNotesController = require("../controllers/RosterNotesController");
 const TasksController = require("../controllers/TasksController");
@@ -48,6 +50,19 @@ const RequestsRouter = (router) => {
     validationAPI,
     RequestsController.getRequestDetail
   );
+
+  // Global online request history (UC10 Command Feeds)
+  router.get(
+    "/fia-home/command/feeds/online-request",
+    validationAPI,
+    OnlineRequestFeedsController.getGlobalOnlineRequestHistory
+  );
+
+  router.get(
+    "/fia-home/command/feeds/online-request/:refDocNo/detail",
+    validationAPI,
+    OnlineRequestFeedsController.getGlobalOnlineRequestDetail
+  );
 };
 
 // ========== TASKS ==========
@@ -78,6 +93,19 @@ const TasksRouter = (router) => {
     "/fia-resource/tasks/:taskId/status",
     validationAPI,
     TasksController.updateTaskStatus
+  );
+
+  // Global online tasks history (UC11 Command Feeds)
+  router.get(
+    "/fia-home/command/feeds/online-tasks",
+    validationAPI,
+    OnlineTaskFeedsController.getGlobalOnlineTasks
+  );
+
+  router.get(
+    "/fia-home/command/feeds/online-tasks/:taskId/detail",
+    validationAPI,
+    OnlineTaskFeedsController.getGlobalOnlineTaskDetail
   );
 };
 
