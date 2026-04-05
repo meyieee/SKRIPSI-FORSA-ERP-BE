@@ -11,6 +11,84 @@ const { users_default_password, company } = require('../../constants')
 const { sequelize } = require('../../models');
 const { getAllEmployeeRepository, postEmployeeByFirstRegisterUserRepository } = require('../../module-hr/repositories/EmployeeRegisterRepository');
 
+const normalizePermissions = (permissions) => {
+  if (!Array.isArray(permissions)) return [];
+  return permissions.filter((item) => item && item.routePath && item.privilege);
+};
+
+const normalizeAuthUser = (user) => {
+  if (!user || typeof user !== 'object') return null;
+
+  const safeUser = { ...user };
+  delete safeUser.password;
+
+  const comType =
+    safeUser['employees.branch_detail.com_type'] ??
+    safeUser?.employees?.branch_detail?.com_type ??
+    safeUser.com_type ??
+    null;
+  const comCode =
+    safeUser['employees.branch_detail.com_code'] ??
+    safeUser?.employees?.branch_detail?.com_code ??
+    safeUser.branch_code ??
+    null;
+  const comName =
+    safeUser['employees.branch_detail.com_name'] ??
+    safeUser?.employees?.branch_detail?.com_name ??
+    null;
+
+  // keep both legacy flat keys and nested aliases during transition
+  safeUser['employees.branch_detail.com_type'] = comType;
+  safeUser['employees.branch_detail.com_code'] = comCode;
+  safeUser['employees.branch_detail.com_name'] = comName;
+  safeUser.branch_code = comCode;
+  safeUser.com_type = comType;
+  safeUser.branch_detail = {
+    com_type: comType,
+    com_code: comCode,
+    com_name: comName,
+  };
+
+  const fn = String(
+    safeUser["employees.first_name"] ?? safeUser?.employees?.first_name ?? ""
+  ).trim();
+  const mn = String(
+    safeUser["employees.middle_name"] ?? safeUser?.employees?.middle_name ?? ""
+  ).trim();
+  const ln = String(
+    safeUser["employees.last_name"] ?? safeUser?.employees?.last_name ?? ""
+  ).trim();
+  const nick = String(
+    safeUser["employees.nick_name"] ?? safeUser?.employees?.nick_name ?? ""
+  ).trim();
+  const fromEmpReg = [fn, mn, ln].filter(Boolean).join(" ");
+  safeUser.display_name =
+    fromEmpReg || nick || safeUser.name || safeUser.username || "";
+
+  return safeUser;
+};
+
+const buildAuthPayload = (user, permissions) => {
+  const normalizedUser = normalizeAuthUser(user);
+  return {
+    user: normalizedUser,
+    permissions: normalizePermissions(permissions),
+    branchDetail: normalizedUser?.branch_detail || null,
+  };
+};
+
+const loadPermissionsByRole = async (roleId) => {
+  const { getAllRolePermissions } = require('../repositories/RbacRepository');
+  if (!roleId) return [];
+
+  try {
+    return await getAllRolePermissions(roleId);
+  } catch (permError) {
+    console.error('Error loading permissions:', permError);
+    return [];
+  }
+};
+
 module.exports = {
   dummy: async(req, res) => {
     return res.status(201).json({ message: "dummy endpoint" });
@@ -23,9 +101,12 @@ module.exports = {
       if(!user){
         return res.status(200).send({ message: "user does not exist" });
       }
-      user.password = undefined
-    
-      return res.status(200).send({ message: "user session", user });
+
+      const permissions = await loadPermissionsByRole(user.role_id);
+      return res.status(200).send({
+        message: "user session",
+        ...buildAuthPayload(user, permissions),
+      });
     } catch (err) {
       return res.status(500).send({ message: err.message });
     }
@@ -54,21 +135,7 @@ module.exports = {
         });
       }
   
-      user.password = undefined // agar password tidak terbawa ke front end
-
-      // Get user permissions
-      const { getAllRolePermissions } = require('../repositories/RbacRepository');
-      let permissions = [];
-      try {
-        if (user.role_id) {
-          permissions = await getAllRolePermissions(user.role_id);
-        }
-      } catch (permError) {
-        // Log error untuk debugging
-        console.error('Error loading permissions:', permError);
-        // Return empty array jika error, jangan block login
-        permissions = [];
-      }
+      const permissions = await loadPermissionsByRole(user.role_id);
 
       const token = JwtToken(user.name, user.id, user.role_id)
       const refreshToken = JwtRefreshToken(user.name, user.id, user.role_id)
@@ -88,8 +155,7 @@ module.exports = {
       })
       .status(200).send({ 
         message: "Log in successful", 
-        user,
-        permissions
+        ...buildAuthPayload(user, permissions),
       });
     } catch (err) {
       console.error('Login error:', err);
@@ -104,6 +170,10 @@ module.exports = {
     const { name } = req.body;
     try {
       let findUser = await getUserByNameRepository(name)
+      if (!findUser) {
+        return res.status(404).send({ message: "User does not exist", user: null, permissions: [] });
+      }
+      const permissions = await loadPermissionsByRole(findUser?.role_id);
       const token = JwtToken(findUser.name, findUser.id, findUser.role_id)
       return res
       .cookie("token", token, {
@@ -114,7 +184,7 @@ module.exports = {
       })
       .status(200).send({
         message: "success refresh",
-        user:findUser,
+        ...buildAuthPayload(findUser, permissions),
       });
     } catch (err) {
       return res.status(500).send({ message: err.message });

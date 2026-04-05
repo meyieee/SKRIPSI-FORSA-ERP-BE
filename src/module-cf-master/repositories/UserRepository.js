@@ -13,7 +13,16 @@ module.exports = {
             {
               model: EmployeeRegister,
               as: 'employees',
-              attributes: ['dept_code', 'id_number', 'status', 'photo'],
+              attributes: [
+                'dept_code',
+                'id_number',
+                'status',
+                'photo',
+                'first_name',
+                'middle_name',
+                'last_name',
+                'nick_name',
+              ],
               include: [
                 getModelCom('branch_detail', ['com_type', 'com_name', 'com_code'])
               ]

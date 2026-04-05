@@ -10,6 +10,7 @@ const AccommodationRequest = require('../controllers/AccommodationRequestControl
 const TransportRequest = require('../controllers/TransportRequestController');
 const VisitorRequest = require('../controllers/VisitorRequestController');
 const PurchaseRequisition = require('../controllers/PurchaseRequisitionController');
+const OnlineServiceEmployee = require('../controllers/OnlineServiceEmployeeController');
 const validationAPI = require('../../middlewares/validationAPI');
 
 /**
@@ -385,6 +386,12 @@ const PurchaseRequisitionRouter = (router) => {
 }
 
 const index = (router) => {
+  router.get(
+    '/online-service/employees/search',
+    validationAPI,
+    OnlineServiceEmployee.searchActiveEmployees
+  );
+
   JobRequestRouter(router);
   FleetRequestRouter(router);
   TrainingRequestRouter(router);
