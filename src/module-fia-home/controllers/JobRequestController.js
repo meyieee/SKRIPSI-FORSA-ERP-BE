@@ -115,15 +115,14 @@ const updateJobRequest = async (req, res) => {
  */
 const getJobRequestList = async (req, res) => {
   try {
-    const { branch_site, workorder_status, limit, offset, include_draft } = req.query;
+    const { branch_site, workorder_status, limit, offset } = req.query;
 
     // Build filters
     const filters = {
       branch_site: branch_site || null,
       workorder_status: workorder_status || null,
       limit: limit || 50,
-      offset: offset || 0,
-      include_draft: include_draft || 'false'
+      offset: offset || 0
     };
 
     // Get list

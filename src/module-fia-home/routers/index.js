@@ -49,12 +49,6 @@ const FleetRequestRouter = (router) => {
   // POST - Create new fleet request (submit final)
   router.post('/fleet-request', validationAPI, FleetRequest.postFleetRequest);
   
-  // POST - Save draft
-  router.post('/fleet-request/draft', validationAPI, FleetRequest.saveFleetRequestDraft);
-  
-  // GET - Get draft (optional)
-  router.get('/fleet-request/draft', validationAPI, FleetRequest.getFleetRequestDraft);
-  
   // GET - Get new form (MUST BE BEFORE /:id route)
   router.get('/fleet-request/new', validationAPI, FleetRequest.getFleetRequestNew);
   
@@ -78,12 +72,6 @@ const TrainingRequestRouter = (router) => {
   // POST - Create new training request (submit final)
   router.post('/training-request', validationAPI, TrainingRequest.postTrainingRequest);
   
-  // POST - Save draft
-  router.post('/training-request/draft', validationAPI, TrainingRequest.saveTrainingRequestDraft);
-  
-  // GET - Get draft
-  router.get('/training-request/draft', validationAPI, TrainingRequest.getTrainingRequestDraft);
-  
   // GET - Get new form (MUST BE BEFORE /:id route)
   router.get('/training-request/new', validationAPI, TrainingRequest.getTrainingRequestNew);
   
@@ -106,12 +94,6 @@ const InspectionDefectRouter = (router) => {
   
   // POST - Create new inspection defect request (submit final)
   router.post('/inspection-defect', validationAPI, InspectionDefect.postInspectionDefect);
-  
-  // POST - Save draft
-  router.post('/inspection-defect/draft', validationAPI, InspectionDefect.saveInspectionDefectDraft);
-  
-  // GET - Get draft
-  router.get('/inspection-defect/draft', validationAPI, InspectionDefect.getInspectionDefectDraft);
   
   // GET - Get new form (MUST BE BEFORE /:id route)
   router.get('/inspection-defect/new', validationAPI, InspectionDefect.getInspectionDefectNew);
@@ -139,12 +121,6 @@ const TravelRequestRouter = (router) => {
   // POST - Create new travel request (submit final)
   router.post('/travel-request', validationAPI, TravelRequest.postTravelRequest);
   
-  // POST - Save draft
-  router.post('/travel-request/draft', validationAPI, TravelRequest.saveTravelRequestDraft);
-  
-  // GET - Get draft
-  router.get('/travel-request/draft', validationAPI, TravelRequest.getTravelRequestDraft);
-  
   // GET - Get new form (MUST BE BEFORE /:id route)
   router.get('/travel-request/new', validationAPI, TravelRequest.getTravelRequestNew);
   
@@ -170,12 +146,6 @@ const WorkforceRequestRouter = (router) => {
   
   // POST - Create new workforce request (submit final)
   router.post('/workforce-request', validationAPI, WorkforceRequest.postWorkforceRequest);
-  
-  // POST - Save draft
-  router.post('/workforce-request/draft', validationAPI, WorkforceRequest.saveWorkforceRequestDraft);
-  
-  // GET - Get draft
-  router.get('/workforce-request/draft', validationAPI, WorkforceRequest.getWorkforceRequestDraft);
   
   // GET - Get new form (MUST BE BEFORE /:id route)
   router.get('/workforce-request/new', validationAPI, WorkforceRequest.getWorkforceRequestNew);
@@ -203,12 +173,6 @@ const AssetRequestRouter = (router) => {
   // POST - Create new asset request (submit final)
   router.post('/asset-request', validationAPI, AssetRequest.postAssetRequest);
   
-  // POST - Save draft
-  router.post('/asset-request/draft', validationAPI, AssetRequest.saveAssetRequestDraft);
-  
-  // GET - Get draft
-  router.get('/asset-request/draft', validationAPI, AssetRequest.getAssetRequestDraft);
-  
   // GET - Get new form (MUST BE BEFORE /:id route)
   router.get('/asset-request/new', validationAPI, AssetRequest.getAssetRequestNew);
   
@@ -234,12 +198,6 @@ const CashRequestRouter = (router) => {
   
   // POST - Create new cash request (submit final)
   router.post('/cash-request', validationAPI, CashRequest.postCashRequest);
-  
-  // POST - Save draft
-  router.post('/cash-request/draft', validationAPI, CashRequest.saveCashRequestDraft);
-  
-  // GET - Get draft
-  router.get('/cash-request/draft', validationAPI, CashRequest.getCashRequestDraft);
   
   // GET - Get new form (MUST BE BEFORE /:id route)
   router.get('/cash-request/new', validationAPI, CashRequest.getCashRequestNew);
@@ -267,12 +225,6 @@ const AccommodationRequestRouter = (router) => {
   // POST - Create new accommodation request (submit final)
   router.post('/accommodation-request', validationAPI, AccommodationRequest.postAccommodationRequest);
   
-  // POST - Save draft
-  router.post('/accommodation-request/draft', validationAPI, AccommodationRequest.saveAccommodationRequestDraft);
-  
-  // GET - Get draft
-  router.get('/accommodation-request/draft', validationAPI, AccommodationRequest.getAccommodationRequestDraft);
-  
   // GET - Get new form (MUST BE BEFORE /:id route)
   router.get('/accommodation-request/new', validationAPI, AccommodationRequest.getAccommodationRequestNew);
   
@@ -298,12 +250,6 @@ const TransportRequestRouter = (router) => {
   
   // POST - Create new transport request (submit final)
   router.post('/transport-request', validationAPI, TransportRequest.postTransportRequest);
-  
-  // POST - Save draft
-  router.post('/transport-request/draft', validationAPI, TransportRequest.saveTransportRequestDraft);
-  
-  // GET - Get draft
-  router.get('/transport-request/draft', validationAPI, TransportRequest.getTransportRequestDraft);
   
   // GET - Get new form (MUST BE BEFORE /:id route)
   router.get('/transport-request/new', validationAPI, TransportRequest.getTransportRequestNew);
@@ -331,12 +277,6 @@ const VisitorRequestRouter = (router) => {
   // POST - Create new visitor request (submit final)
   router.post('/visitor-request', validationAPI, VisitorRequest.postVisitorRequest);
   
-  // POST - Save draft
-  router.post('/visitor-request/draft', validationAPI, VisitorRequest.saveVisitorRequestDraft);
-  
-  // GET - Get draft
-  router.get('/visitor-request/draft', validationAPI, VisitorRequest.getVisitorRequestDraft);
-  
   // GET - Get new form (MUST BE BEFORE /:id route)
   router.get('/visitor-request/new', validationAPI, VisitorRequest.getVisitorRequestNew);
   
@@ -362,12 +302,6 @@ const PurchaseRequisitionRouter = (router) => {
   
   // POST - Create new purchase requisition (submit final)
   router.post('/purchase-requisition', validationAPI, PurchaseRequisition.postPurchaseRequisition);
-  
-  // POST - Save draft
-  router.post('/purchase-requisition/draft', validationAPI, PurchaseRequisition.savePurchaseRequisitionDraft);
-  
-  // GET - Get draft
-  router.get('/purchase-requisition/draft', validationAPI, PurchaseRequisition.getPurchaseRequisitionDraft);
   
   // GET - Get new form (MUST BE BEFORE /:id route)
   router.get('/purchase-requisition/new', validationAPI, PurchaseRequisition.getPurchaseRequisitionNew);

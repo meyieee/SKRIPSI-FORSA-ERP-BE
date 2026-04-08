@@ -270,38 +270,6 @@ async function generateNextRequestId(requestType) {
   }
 }
 
-/**
- * Get draft by request_by and request_type
- * @param {string} requestBy - Request by user
- * @param {string} requestType - Request type
- * @returns {Promise<object|null>} Draft data or null
- */
-async function getDraft(requestBy, requestType) {
-  try {
-    if (!requestBy) {
-      throw new Error('requestBy parameter is required');
-    }
-    
-    if (!requestType) {
-      throw new Error('requestType parameter is required');
-    }
-    
-    const draft = await FIAOnlineReq.findOne({
-      where: {
-        request_by: requestBy,
-        request_type: requestType,
-        is_draft: true
-      },
-      order: [['updated_at', 'DESC']],
-      raw: true
-    });
-    
-    return draft;
-  } catch (error) {
-    throw new Error(`Failed to get draft: ${error.message}`);
-  }
-}
-
 module.exports = {
   generateRefRequestNo,
   getById,
@@ -311,7 +279,6 @@ module.exports = {
   getList,
   updateStatus,
   getLastIdByRequestType,
-  generateNextRequestId,
-  getDraft
+  generateNextRequestId
 };
 

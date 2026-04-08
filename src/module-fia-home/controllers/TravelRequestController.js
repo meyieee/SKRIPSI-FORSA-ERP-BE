@@ -115,15 +115,14 @@ const updateTravelRequest = async (req, res) => {
  */
 const getTravelRequestList = async (req, res) => {
   try {
-    const { branch_site, status, limit, offset, include_draft } = req.query;
+    const { branch_site, status, limit, offset } = req.query;
 
     // Build filters
     const filters = {
       branch_site: branch_site || null,
       workorder_status: status || null,
       limit: limit || 50,
-      offset: offset || 0,
-      include_draft: include_draft || 'false'
+      offset: offset || 0
     };
 
     // Get list
@@ -137,54 +136,6 @@ const getTravelRequestList = async (req, res) => {
         limit: result.limit,
         offset: result.offset
       }
-    });
-  } catch (error) {
-    return res.status(500).send({ message: error.message });
-  }
-};
-
-/**
- * POST /api/travel-request/draft
- * Save Travel Request as Draft
- */
-const saveTravelRequestDraft = async (req, res) => {
-  try {
-    const responseData = await TravelRequestRepository.saveDraft(req.body);
-
-    return res.status(200).send({
-      message: "Successfully saved draft.",
-      data: responseData
-    });
-  } catch (error) {
-    return res.status(500).send({ message: error.message });
-  }
-};
-
-/**
- * GET /api/travel-request/draft?request_by=...
- * Get Travel Request Draft by user
- */
-const getTravelRequestDraft = async (req, res) => {
-  try {
-    const { request_by } = req.query;
-
-    if (!request_by) {
-      return res.status(400).send({
-        message: "request_by parameter is required"
-      });
-    }
-
-    const draft = await TravelRequestRepository.getDraft(request_by);
-
-    if (!draft) {
-      return res.status(404).send({
-        message: "Draft not found"
-      });
-    }
-
-    return res.status(200).send({
-      message: "Successfully fetched draft.",
-      data: draft
     });
   } catch (error) {
     return res.status(500).send({ message: error.message });
@@ -235,8 +186,6 @@ module.exports = {
   getTravelRequestNew,
   updateTravelRequest,
   getTravelRequestList,
-  saveTravelRequestDraft,
-  getTravelRequestDraft,
   updateTravelRequestStatus
 };
 

@@ -114,15 +114,14 @@ const updateFleetRequest = async (req, res) => {
  */
 const getFleetRequestList = async (req, res) => {
   try {
-    const { branch_site, status, limit, offset, include_draft } = req.query;
+    const { branch_site, status, limit, offset } = req.query;
 
     // Build filters
     const filters = {
       branch_site: branch_site || null,
       workorder_status: status || null,
       limit: limit || 50,
-      offset: offset || 0,
-      include_draft: include_draft || 'false'
+      offset: offset || 0
     };
 
     // Get list
@@ -142,64 +141,10 @@ const getFleetRequestList = async (req, res) => {
   }
 };
 
-/**
- * POST /api/fleet-request/draft
- * Save Fleet Request as Draft
- */
-const saveFleetRequestDraft = async (req, res) => {
-  try {
-    const responseData = await FleetRequestRepository.saveDraft(req.body);
-
-    const isNew = !req.body.header?.refRequestNo;
-    const statusCode = isNew ? 201 : 200;
-    const message = isNew ? "Successfully saved draft." : "Successfully updated draft.";
-
-    return res.status(statusCode).send({
-      message: message,
-      data: responseData
-    });
-  } catch (error) {
-    return res.status(500).send({ message: error.message });
-  }
-};
-
-/**
- * GET /api/fleet-request/draft
- * Get Fleet Request Draft (latest draft by user)
- */
-const getFleetRequestDraft = async (req, res) => {
-  try {
-    const { request_by } = req.query;
-
-    if (!request_by) {
-      return res.status(400).send({
-        message: "request_by parameter is required"
-      });
-    }
-
-    const draft = await FleetRequestRepository.getDraft(request_by);
-
-    if (!draft) {
-      return res.status(404).send({
-        message: "No draft found"
-      });
-    }
-
-    return res.status(200).send({
-      message: "Successfully fetched draft.",
-      data: draft
-    });
-  } catch (error) {
-    return res.status(500).send({ message: error.message });
-  }
-};
-
 module.exports = {
   postFleetRequest,
   getFleetRequest,
   getFleetRequestNew,
   updateFleetRequest,
-  getFleetRequestList,
-  saveFleetRequestDraft,
-  getFleetRequestDraft
+  getFleetRequestList
 };

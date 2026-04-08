@@ -205,14 +205,9 @@ async function getList(filters = {}) {
     result.data.map(item => transformToFrontend(item))
   );
   
-  // Filter out drafts unless include_draft=true
-  let filteredData = transformedData;
-  if (filters.include_draft !== 'true') {
-    filteredData = transformedData.filter(item => !item.is_draft || item.is_draft === 0);
-  }
-  
-  // Recalculate total if drafts were filtered
-  const total = filters.include_draft === 'true' ? result.total : filteredData.length;
+  // Exclude draft rows from list
+  const filteredData = transformedData.filter(item => !item.is_draft || item.is_draft === 0);
+  const total = filteredData.length;
   
   return {
     data: filteredData,
@@ -220,94 +215,6 @@ async function getList(filters = {}) {
     limit: result.limit,
     offset: result.offset
   };
-}
-
-/**
- * Save Travel Request as Draft
- * @param {object} frontendData - Request data dalam format frontend
- * @returns {Promise<object>} Saved draft data dalam format frontend
- */
-async function saveDraft(frontendData) {
-  // Generate refRequestNo jika belum ada
-  let refRequestNo = frontendData.header?.refRequestNo;
-  if (!refRequestNo) {
-    refRequestNo = await generateRefRequestNo();
-  }
-  
-  // Check if draft already exists
-  const existing = await BaseRepository.getByRefNo(refRequestNo);
-  
-  // Transform to backend format
-  const backendData = transformToBackend({
-    ...frontendData,
-    header: {
-      ...frontendData.header,
-      refRequestNo: refRequestNo
-    },
-    is_draft: true
-  });
-  
-  // Ensure ref_request_no is set
-  backendData.ref_request_no = refRequestNo;
-  backendData.is_draft = true;
-  
-  const TravelerModel = require('../models/adm_fia_online_req_traveller');
-  
-  if (existing) {
-    // Update existing draft
-    await BaseRepository.update(backendData, existing.id);
-    
-    // Update travelers
-    await TravelerModel.destroy({
-      where: { ref_request_no: refRequestNo }
-    });
-    
-    if (frontendData.travelers && frontendData.travelers.length > 0) {
-      for (const traveler of frontendData.travelers) {
-        await TravelerModel.create({
-          ref_request_no: refRequestNo,
-          last_name: traveler.lastName || '',
-          first_name: traveler.firstName || '',
-          category: traveler.category || '',
-          comments: traveler.comments || ''
-        });
-      }
-    }
-    
-    const updated = await BaseRepository.getById(existing.id);
-    return transformToFrontend(updated);
-  } else {
-    // Create new draft
-    await BaseRepository.create(backendData);
-    
-    // Create travelers
-    if (frontendData.travelers && frontendData.travelers.length > 0) {
-      for (const traveler of frontendData.travelers) {
-        await TravelerModel.create({
-          ref_request_no: refRequestNo,
-          last_name: traveler.lastName || '',
-          first_name: traveler.firstName || '',
-          category: traveler.category || '',
-          comments: traveler.comments || ''
-        });
-      }
-    }
-    
-    const created = await BaseRepository.getByRefNo(refRequestNo);
-    return transformToFrontend(created);
-  }
-}
-
-/**
- * Get Travel Request Draft
- * @param {string} requestBy - Request by user
- * @returns {Promise<object|null>} Draft data dalam format frontend atau null
- */
-async function getDraft(requestBy) {
-  const draft = await BaseRepository.getDraft(requestBy, REQUEST_TYPE);
-  if (!draft) return null;
-  
-  return transformToFrontend(draft);
 }
 
 /**
@@ -411,8 +318,6 @@ module.exports = {
   create,
   update,
   getList,
-  saveDraft,
-  getDraft,
   getNewForm,
   
   // Constants

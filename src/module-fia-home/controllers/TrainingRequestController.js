@@ -114,15 +114,14 @@ const updateTrainingRequest = async (req, res) => {
  */
 const getTrainingRequestList = async (req, res) => {
   try {
-    const { branch_site, status, limit, offset, include_draft } = req.query;
+    const { branch_site, status, limit, offset } = req.query;
 
     // Build filters
     const filters = {
       branch_site: branch_site || null,
       workorder_status: status || null,
       limit: limit || 50,
-      offset: offset || 0,
-      include_draft: include_draft || 'false'
+      offset: offset || 0
     };
 
     // Get list
@@ -142,64 +141,10 @@ const getTrainingRequestList = async (req, res) => {
   }
 };
 
-/**
- * POST /api/training-request/draft
- * Save Training Request as Draft
- */
-const saveTrainingRequestDraft = async (req, res) => {
-  try {
-    const responseData = await TrainingRequestRepository.saveDraft(req.body);
-
-    const isNew = !req.body.header?.refRequestNo;
-    const statusCode = isNew ? 201 : 200;
-    const message = isNew ? "Successfully saved draft." : "Successfully updated draft.";
-
-    return res.status(statusCode).send({
-      message: message,
-      data: responseData
-    });
-  } catch (error) {
-    return res.status(500).send({ message: error.message });
-  }
-};
-
-/**
- * GET /api/training-request/draft
- * Get Training Request Draft (latest draft by user)
- */
-const getTrainingRequestDraft = async (req, res) => {
-  try {
-    const { request_by } = req.query;
-
-    if (!request_by) {
-      return res.status(400).send({
-        message: "request_by parameter is required"
-      });
-    }
-
-    const draft = await TrainingRequestRepository.getDraft(request_by);
-
-    if (!draft) {
-      return res.status(404).send({
-        message: "No draft found"
-      });
-    }
-
-    return res.status(200).send({
-      message: "Successfully fetched draft.",
-      data: draft
-    });
-  } catch (error) {
-    return res.status(500).send({ message: error.message });
-  }
-};
-
 module.exports = {
   postTrainingRequest,
   getTrainingRequest,
   getTrainingRequestNew,
   updateTrainingRequest,
-  getTrainingRequestList,
-  saveTrainingRequestDraft,
-  getTrainingRequestDraft
+  getTrainingRequestList
 };

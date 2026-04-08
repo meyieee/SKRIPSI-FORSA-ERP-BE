@@ -115,15 +115,14 @@ const updateAccommodationRequest = async (req, res) => {
  */
 const getAccommodationRequestList = async (req, res) => {
   try {
-    const { branch_site, status, limit, offset, include_draft } = req.query;
+    const { branch_site, status, limit, offset } = req.query;
 
     // Build filters
     const filters = {
       branch_site: branch_site || null,
       workorder_status: status || null,
       limit: limit || 50,
-      offset: offset || 0,
-      include_draft: include_draft || 'false'
+      offset: offset || 0
     };
 
     // Get list
@@ -137,54 +136,6 @@ const getAccommodationRequestList = async (req, res) => {
         limit: result.limit,
         offset: result.offset
       }
-    });
-  } catch (error) {
-    return res.status(500).send({ message: error.message });
-  }
-};
-
-/**
- * POST /api/accommodation-request/draft
- * Save Accommodation Request as Draft
- */
-const saveAccommodationRequestDraft = async (req, res) => {
-  try {
-    const responseData = await AccommodationRequestRepository.saveDraft(req.body);
-
-    return res.status(200).send({
-      message: "Successfully saved draft.",
-      data: responseData
-    });
-  } catch (error) {
-    return res.status(500).send({ message: error.message });
-  }
-};
-
-/**
- * GET /api/accommodation-request/draft?request_by=...
- * Get Accommodation Request Draft by user
- */
-const getAccommodationRequestDraft = async (req, res) => {
-  try {
-    const { request_by } = req.query;
-
-    if (!request_by) {
-      return res.status(400).send({
-        message: "request_by parameter is required"
-      });
-    }
-
-    const draft = await AccommodationRequestRepository.getDraft(request_by);
-
-    if (!draft) {
-      return res.status(404).send({
-        message: "Draft not found"
-      });
-    }
-
-    return res.status(200).send({
-      message: "Successfully fetched draft.",
-      data: draft
     });
   } catch (error) {
     return res.status(500).send({ message: error.message });
@@ -235,8 +186,6 @@ module.exports = {
   getAccommodationRequestNew,
   updateAccommodationRequest,
   getAccommodationRequestList,
-  saveAccommodationRequestDraft,
-  getAccommodationRequestDraft,
   updateAccommodationRequestStatus
 };
 
