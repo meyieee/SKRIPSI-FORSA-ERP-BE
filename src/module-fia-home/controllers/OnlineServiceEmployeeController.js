@@ -1,5 +1,10 @@
 const { Op } = require("sequelize");
 const EmpReg = require("../../module-hr/models/tbl_emp_regs");
+const {
+  getModelCom,
+  getModelDepartment,
+  getModelCostCenter,
+} = require("../../function/getIncludeModels");
 
 const toStr = (v) => (v === null || v === undefined ? "" : String(v));
 
@@ -93,6 +98,58 @@ const searchActiveEmployees = async (req, res) => {
   }
 };
 
+/**
+ * GET /online-service/employees/:idNumber/org
+ * Branch / department / cost center for an active employee (Request For → auto-fill org fields).
+ */
+const getEmployeeOrgByIdNumber = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const idNumber = normalizeSpaces(req.params.idNumber);
+    if (!idNumber) {
+      return res.status(400).json({ message: "idNumber is required" });
+    }
+
+    const row = await EmpReg.findOne({
+      where: { id_number: idNumber, status: "Active" },
+      attributes: ["id_number", "branch_code", "dept_code", "cost_center"],
+      include: [
+        getModelCom("branch_detail", ["com_code", "com_name"]),
+        getModelDepartment("department_detail", ["dept_code", "dept_des"]),
+        getModelCostCenter("cost_center_detail", ["c_code", "c_des"]),
+      ],
+    });
+
+    if (!row) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    const plain = row.get ? row.get({ plain: true }) : row;
+    const bd = plain.branch_detail || {};
+    const dd = plain.department_detail || {};
+    const cc = plain.cost_center_detail || {};
+
+    return res.status(200).json({
+      message: "OK",
+      data: {
+        branch_code: toStr(plain.branch_code),
+        branch_name: toStr(bd.com_name),
+        dept_code: toStr(plain.dept_code),
+        dept_name: toStr(dd.dept_des),
+        cost_center: toStr(plain.cost_center),
+        cost_center_name: toStr(cc.c_des),
+      },
+    });
+  } catch (err) {
+    console.error("getEmployeeOrgByIdNumber error:", err);
+    return res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   searchActiveEmployees,
+  getEmployeeOrgByIdNumber,
 };

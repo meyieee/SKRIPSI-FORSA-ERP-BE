@@ -325,6 +325,11 @@ const index = (router) => {
     validationAPI,
     OnlineServiceEmployee.searchActiveEmployees
   );
+  router.get(
+    '/online-service/employees/:idNumber/org',
+    validationAPI,
+    OnlineServiceEmployee.getEmployeeOrgByIdNumber
+  );
 
   JobRequestRouter(router);
   FleetRequestRouter(router);

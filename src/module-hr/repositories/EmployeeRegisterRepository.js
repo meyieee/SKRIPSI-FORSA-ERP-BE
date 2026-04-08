@@ -151,14 +151,14 @@ module.exports = {
          id_number_ref, hire_date, service_date, probation_date, point_of_hire, point_of_leave, 
          point_of_travel, contract_no, contract_date, contract_expire, job_title, position_title, 
          work_function, job_level, individual_grade, individual_level, employee_type, employee_class, 
-         employment_type, supervisor, branch_code, emp_company, dept_code, cost_center, account_code, 
+         employment_type, supervisor, branch_code, emp_company, dept_code, section_code, cost_center, account_code, 
          union_code, onsite_location, onsite_address, work_location, office_code, onsite_marital, 
          marital_benefit, work_phone, mobile, wa, email_company, website, termination_date, termination_by,
          termination_reason, 
          
          // Step 3
          paygroup, bank_account, leave_type, work_insurance, medical_insurance, 
-         tax_code, work_day, crew, last_promotion,
+         tax_code, work_day, crew, last_promotion, remarks,
     } = params;
 
     await EmployeeRegister.create({
@@ -174,14 +174,14 @@ module.exports = {
         id_number_ref, hire_date, service_date, probation_date, point_of_hire, point_of_leave, 
         point_of_travel, contract_no, contract_date, contract_expire, job_title, position_title, 
         work_function, job_level, individual_grade, individual_level, employee_type, employee_class, 
-        employment_type, supervisor, branch_code, emp_company, dept_code, cost_center, account_code, 
+        employment_type, supervisor, branch_code, emp_company, dept_code, section_code, cost_center, account_code, 
         union_code, onsite_location, onsite_address, work_location, office_code, onsite_marital, 
         marital_benefit, work_phone, mobile, wa, email_company, website, termination_date, termination_by,
         termination_reason, 
         
         // Step 3
         paygroup, bank_account, leave_type, work_insurance, medical_insurance, 
-        tax_code, work_day, crew, last_promotion,
+        tax_code, work_day, crew, last_promotion, remarks,
       })
 
   },
@@ -202,14 +202,14 @@ module.exports = {
          id_number_ref, hire_date, service_date, probation_date, point_of_hire, point_of_leave, 
          point_of_travel, contract_no, contract_date, contract_expire, job_title, position_title, 
          work_function, job_level, individual_grade, individual_level, employee_type, employee_class, 
-         employment_type, supervisor, branch_code, emp_company, dept_code, cost_center, account_code, 
+         employment_type, supervisor, branch_code, emp_company, dept_code, section_code, cost_center, account_code, 
          union_code, onsite_location, onsite_address, work_location, office_code, onsite_marital, 
          marital_benefit, work_phone, mobile, wa, email_company, website, termination_date, termination_by,
          termination_reason, 
          
          // Step 3
          paygroup, bank_account, leave_type, work_insurance, medical_insurance, 
-         tax_code, work_day, crew, last_promotion,
+         tax_code, work_day, crew, last_promotion, remarks,
     } = params;
 
 
@@ -230,14 +230,14 @@ module.exports = {
             id_number_ref, hire_date, service_date, probation_date, point_of_hire, point_of_leave, 
             point_of_travel, contract_no, contract_date, contract_expire, job_title, position_title, 
             work_function, job_level, individual_grade, individual_level, employee_type, employee_class, 
-            employment_type, supervisor, branch_code, emp_company, dept_code, cost_center, account_code, 
+            employment_type, supervisor, branch_code, emp_company, dept_code, section_code, cost_center, account_code, 
             union_code, onsite_location, onsite_address, work_location, office_code, onsite_marital, 
             marital_benefit, work_phone, mobile, wa, email_company, website, termination_date, termination_by,
             termination_reason, 
             
             // Step 3
             paygroup, bank_account, leave_type, work_insurance, medical_insurance, 
-            tax_code, work_day, crew, last_promotion,
+            tax_code, work_day, crew, last_promotion, remarks,
         },
         { where: { id }})
   },
