@@ -80,6 +80,12 @@ function getEmployeeHierarchyLevel(empRow) {
   return null;
 }
 
+function canAccessEmployee(loginLevel, targetLevel) {
+  if (loginLevel === null) return false;
+  if (targetLevel === null) return loginLevel > 0;
+  return targetLevel < loginLevel;
+}
+
 // sesuai rule kamu:
 // - field varchar(15) yang dianggap FK dan masih kosong -> "To be linked"
 const toLinked = (v) => {
@@ -173,9 +179,8 @@ module.exports = {
         .filter((r) => {
           const candidateLevel = getEmployeeHierarchyLevel(r);
           const candidateIdNumber = toStr(r.id_number).trim();
-          if (candidateLevel === null) return false;
           if (candidateIdNumber === loginIdNumber) return false;
-          return candidateLevel < loginLevel;
+          return canAccessEmployee(loginLevel, candidateLevel);
         })
         .map((r) => ({
           id_number: toStr(r.id_number),
@@ -242,13 +247,7 @@ module.exports = {
       const targetIdNumber = toStr(row.id_number).trim();
       if (targetIdNumber !== loginIdNumber) {
         const targetLevel = getEmployeeHierarchyLevel(row);
-        if (loginLevel === null || targetLevel === null) {
-          return res
-            .status(400)
-            .json({ message: "Unable to determine employee hierarchy level" });
-        }
-
-        if (targetLevel >= loginLevel) {
+        if (!canAccessEmployee(loginLevel, targetLevel)) {
           return res.status(403).json({ message: "Forbidden" });
         }
       }

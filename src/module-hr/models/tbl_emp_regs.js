@@ -28,6 +28,14 @@ class tbl_emp_regs extends Model {
         province: DataTypes.STRING,
         country: DataTypes.STRING,
         post_code: DataTypes.STRING,
+        kin_fullname: DataTypes.STRING,
+        kin_relationship: DataTypes.STRING,
+        kin_fulladdress: DataTypes.STRING,
+        kin_phone: DataTypes.STRING,
+        kin_fullname2: DataTypes.STRING,
+        kin_relationship2: DataTypes.STRING,
+        kin_fulladdress2: DataTypes.STRING,
+        kin_phone2: DataTypes.STRING,
         blood_type: DataTypes.STRING,
         height: DataTypes.STRING,
         weight: DataTypes.STRING,
@@ -144,6 +152,11 @@ class tbl_emp_regs extends Model {
       foreignKey: "dept_code",
       targetKey: "dept_code",
       as: "department_detail",
+    });
+    tbl_emp_regs.belongsTo(models.adm_cf_11_depts_section, {
+      foreignKey: "section_code",
+      targetKey: "section_code",
+      as: "section_detail",
     });
     tbl_emp_regs.belongsTo(models.adm_cf_13_costcenter, {
       foreignKey: "cost_center",

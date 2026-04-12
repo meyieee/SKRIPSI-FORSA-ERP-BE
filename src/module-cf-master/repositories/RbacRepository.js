@@ -6,6 +6,24 @@ const adm_fia_control_feature = connection.models.adm_fia_control_feature;
 const adm_fia_control_role_privilege = connection.models.adm_fia_control_role_privilege;
 
 module.exports = {
+  getAllRoleCategories: async () => {
+    try {
+      const roles = await adm_fia_control_user_role.findAll({
+        attributes: ['role_category'],
+        raw: true,
+      });
+
+      return [...new Set(
+        roles
+          .map((item) => String(item.role_category || '').trim())
+          .filter(Boolean)
+      )].sort((a, b) => a.localeCompare(b));
+    } catch (error) {
+      console.error('Error in getAllRoleCategories:', error);
+      throw error;
+    }
+  },
+
   /**
    * Get all permissions for a role (for login response)
    * @param {number} roleId - Role ID

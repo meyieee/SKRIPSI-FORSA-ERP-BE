@@ -7,6 +7,7 @@ const ComPictureController = require('../controllers/ComPictureController')
 const ComContractController = require('../controllers/ComContractController')
 
 const DepartmentController = require('../controllers/DepartmentController')
+const SectionController = require('../controllers/SectionController')
 const BusinessUnitController = require('../controllers/BusinessUnitController')
 const DivisionController = require('../controllers/DivisionController');
 const CostCenterController = require('../controllers/CostCenterController')
@@ -33,6 +34,7 @@ const UserRouter = (router) =>{
     router.post('/users/logout', validationAPI, UserController.logout);
     router.get('/users/session/:name', validationAPI, UserController.session);
     router.get('/users', validationAPI, UserController.getUsers);
+    router.get('/users/role-categories', validationAPI, UserController.getRoleCategories);
     router.get('/user/:id', validationAPI, UserController.getUserById);
     router.get('/users/check-existing-admin', UserController.checkExistingAdmin);
     router.get('/users/:branch_code', validationAPI, UserController.getUsersPerBranch);
@@ -261,6 +263,10 @@ const DepartmentRouter = (router)=>{
     router.get('/department/:id', validationAPI, DepartmentController.getDepartment); // get Department
     router.get('/departmentbycode/:code', validationAPI, DepartmentController.getDepartmentByCode); // get Department by code
     
+}
+
+const SectionRouter = (router)=>{
+    router.get('/sections', validationAPI, SectionController.getAllSection); // get all Section
 }
 
 const BusinessUnitRouter = (router) =>{
@@ -650,6 +656,7 @@ const index = (router)=>{
     ContractorProfilePictureRouter(router)
     
     DepartmentRouter(router)
+    SectionRouter(router)
     BusinessUnitRouter(router)
     DivisionRouter(router)
     CostCenterRouter(router)

@@ -89,6 +89,17 @@ const loadPermissionsByRole = async (roleId) => {
   }
 };
 
+const loadRoleCategories = async () => {
+  const { getAllRoleCategories } = require('../repositories/RbacRepository');
+
+  try {
+    return await getAllRoleCategories();
+  } catch (roleError) {
+    console.error('Error loading role categories:', roleError);
+    throw roleError;
+  }
+};
+
 module.exports = {
   dummy: async(req, res) => {
     return res.status(201).json({ message: "dummy endpoint" });
@@ -243,6 +254,19 @@ module.exports = {
       return res.status(200).send({
         message: "Successfully fetched users.",
         data: users
+      });
+    } catch (err) {
+      return res.status(500).send({ message: err.message });
+    }
+  },
+
+  getRoleCategories: async (req, res) => {
+    try {
+      const categories = await loadRoleCategories();
+
+      return res.status(200).send({
+        message: "Successfully fetched role categories.",
+        data: categories
       });
     } catch (err) {
       return res.status(500).send({ message: err.message });

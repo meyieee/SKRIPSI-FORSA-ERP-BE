@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const TokenBlackLists = require('../models/token_blacklists')
 const EmployeeRegister = require("../../module-hr/models/tbl_emp_regs");
+const UserRole = require('../models/adm_fia_control_user_role');
 const { users_default_password } = require('../../constants')
 const { getModelCom, getModelDepartment } = require('../../function/getIncludeModels')
 
@@ -39,21 +40,31 @@ module.exports = {
     },
 
     getUsersRepository: async (branch_code) => {
-    const whereClause = branch_code ? { branch_code } : {};
+      const employeeInclude = {
+        model: EmployeeRegister,
+        as: 'employees',
+        required: Boolean(branch_code),
+        attributes: ['dept_code', 'id_number', 'photo'],
+        include: [
+          getModelCom('branch_detail', ['com_type', 'com_name', 'com_code']),
+          getModelDepartment('department_detail', ['dept_des', 'dept_code'])
+        ],
+      };
+
+      if (branch_code) {
+        employeeInclude.where = { branch_code };
+      }
+
       return await User.findAll({
         raw: true,
-        order: [['status', 'DESC']],
+        order: [['status', 'DESC'], ['createdAt', 'DESC']],
         include: [
+          employeeInclude,
           {
-            model: EmployeeRegister,
-            as: 'employees',
-            required: true, // Mengharuskan User memiliki EmployeeRegister
-            attributes: ['dept_code', 'id_number', 'photo'],
-            where: whereClause, // Filter langsung di EmployeeRegister
-            include: [
-              getModelCom('branch_detail', ['com_type', 'com_name', 'com_code']),
-              getModelDepartment('department_detail', ['dept_des', 'dept_code'])
-            ],
+            model: UserRole,
+            as: 'roleDetail',
+            required: false,
+            attributes: ['role_name', 'role_category'],
           },
         ],
       });
@@ -72,13 +83,19 @@ module.exports = {
           {
             model: EmployeeRegister,
             as: 'employees',
-            required: true, // Mengharuskan User memiliki EmployeeRegister
+            required: false,
             attributes: [], // tidak perlu membawa atribut dari employees
             include: [
               getModelCom('branch_detail', ['com_code', 'com_name']),
               getModelDepartment('department_detail', ['dept_des', 'dept_code'])
             ]
           },
+          {
+            model: UserRole,
+            as: 'roleDetail',
+            required: false,
+            attributes: ['role_name', 'role_category'],
+          }
         ],
       });
     },
