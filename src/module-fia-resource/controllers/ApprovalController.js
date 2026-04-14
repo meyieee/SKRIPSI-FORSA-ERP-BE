@@ -47,6 +47,14 @@ function mapActionType(actionType) {
   return null;
 }
 
+function mapProcessStatusToHeaderStatus(status) {
+  const normalized = String(status || "").toUpperCase();
+  if (normalized === "APPROVED") return "Approved";
+  if (normalized === "REJECTED") return "Rejected";
+  if (normalized === "PENDING") return "Pending";
+  return "";
+}
+
 function fmtDateDDMonYY(d) {
   const dt = parseDateOnlySafe(d);
   if (Number.isNaN(dt.getTime())) return "";
@@ -522,6 +530,18 @@ class ApprovalController {
       });
       const empMap = new Map(empRows.map((e) => [e.id_number, e]));
 
+      const requestTypes = [
+        ...new Set(reqRows.map((row) => row.request_type).filter(Boolean)),
+      ];
+      const allRouteMasters = await models.adm_fia_online_req_approver_master.findAll({
+        where: {
+          routine: { [Op.like]: "Y%" },
+          request_type: { [Op.in]: requestTypes.length ? requestTypes : [""] },
+        },
+        attributes: ["request_type", "com_code", "section_code", "approver_type"],
+        raw: true,
+      });
+
       const results = [];
 
       for (const r of reqRows) {
@@ -558,6 +578,27 @@ class ApprovalController {
             docNo: r.ref_request_no,
             ok: false,
             message: "Approver type routine not found",
+          });
+          continue;
+        }
+
+        const routeMasters = allRouteMasters.filter(
+          (m) =>
+            m.request_type === r.request_type &&
+            m.com_code === emp.emp_company &&
+            m.section_code === emp.section_code
+        );
+
+        const lastConfiguredRoutine = routeMasters.reduce((max, item) => {
+          const routineNo = Number(typeRoutine.get(item.approver_type) || 0);
+          return routineNo > max ? routineNo : max;
+        }, 0);
+
+        if (!lastConfiguredRoutine) {
+          results.push({
+            docNo: r.ref_request_no,
+            ok: false,
+            message: "Last approver routine configuration not found",
           });
           continue;
         }
@@ -614,6 +655,21 @@ class ApprovalController {
           approved_date: new Date(),
           comments: comment || "",
         });
+
+        const isLastRoutine = Number(myRoutine) >= Number(lastConfiguredRoutine);
+        const shouldSyncHeaderStatus =
+          isLastRoutine && (mapped === "APPROVED" || mapped === "REJECTED");
+
+        if (shouldSyncHeaderStatus) {
+          await models.adm_fia_online_req.update(
+            {
+              approval_status: mapProcessStatusToHeaderStatus(mapped),
+            },
+            {
+              where: { ref_request_no: r.ref_request_no },
+            }
+          );
+        }
 
         results.push({ docNo: r.ref_request_no, ok: true });
       }

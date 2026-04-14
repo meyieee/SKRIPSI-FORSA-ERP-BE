@@ -3,12 +3,19 @@ const EmpReg = require("../../module-hr/models/tbl_emp_regs");
 const {
   getModelCom,
   getModelDepartment,
-  getModelCostCenter,
 } = require("../../function/getIncludeModels");
 
 const toStr = (v) => (v === null || v === undefined ? "" : String(v));
 
 const normalizeSpaces = (s) => toStr(s).replace(/\s+/g, " ").trim();
+
+const getLoginBranchCode = (user) =>
+  normalizeSpaces(
+    user?.branch_code ||
+      user?.["employees.branch_detail.com_code"] ||
+      user?.["employees.branch_detail.branch_code"] ||
+      ""
+  );
 
 const buildFullName = (row) =>
   normalizeSpaces(
@@ -31,9 +38,14 @@ const searchActiveEmployees = async (req, res) => {
 
     const q = normalizeSpaces(req.query.q);
     const myId = normalizeSpaces(req.user.id_number || "");
+    const myBranchCode = getLoginBranchCode(req.user);
+    if (!myBranchCode) {
+      return res.status(200).json({ message: "OK", data: [] });
+    }
 
     const sequelize = EmpReg.sequelize;
     const baseWhere = { status: "Active" };
+    baseWhere.branch_code = myBranchCode;
     const where = q
       ? {
           ...baseWhere,
@@ -113,13 +125,21 @@ const getEmployeeOrgByIdNumber = async (req, res) => {
       return res.status(400).json({ message: "idNumber is required" });
     }
 
+    const myBranchCode = getLoginBranchCode(req.user);
+    if (!myBranchCode) {
+      return res.status(400).json({ message: "User branch is not available" });
+    }
+
     const row = await EmpReg.findOne({
-      where: { id_number: idNumber, status: "Active" },
-      attributes: ["id_number", "branch_code", "dept_code", "cost_center"],
+      where: {
+        id_number: idNumber,
+        status: "Active",
+        ...(myBranchCode ? { branch_code: myBranchCode } : {}),
+      },
+      attributes: ["id_number", "branch_code", "dept_code"],
       include: [
         getModelCom("branch_detail", ["com_code", "com_name"]),
         getModelDepartment("department_detail", ["dept_code", "dept_des"]),
-        getModelCostCenter("cost_center_detail", ["c_code", "c_des"]),
       ],
     });
 
@@ -130,7 +150,6 @@ const getEmployeeOrgByIdNumber = async (req, res) => {
     const plain = row.get ? row.get({ plain: true }) : row;
     const bd = plain.branch_detail || {};
     const dd = plain.department_detail || {};
-    const cc = plain.cost_center_detail || {};
 
     return res.status(200).json({
       message: "OK",
@@ -139,8 +158,8 @@ const getEmployeeOrgByIdNumber = async (req, res) => {
         branch_name: toStr(bd.com_name),
         dept_code: toStr(plain.dept_code),
         dept_name: toStr(dd.dept_des),
-        cost_center: toStr(plain.cost_center),
-        cost_center_name: toStr(cc.c_des),
+        cost_center: "",
+        cost_center_name: "",
       },
     });
   } catch (err) {

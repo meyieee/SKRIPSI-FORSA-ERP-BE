@@ -3,6 +3,7 @@
  */
 
 const BaseRepository = require('./FIAOnlineReqBaseRepository');
+const { formatLocalDate } = require('./DateOnlyHelper');
 const {
   transformFleetRequestToBackend,
   transformFleetRequestToFrontend
@@ -171,7 +172,7 @@ async function getNewForm() {
       refRequestNo: refRequestNo,
     },
     requestInfo: {
-      requestDate: new Date().toISOString().slice(0, 10),
+      requestDate: formatLocalDate(new Date()),
       requestBy: '',
       requestByJobTitle: '',
       requestFor: '',
