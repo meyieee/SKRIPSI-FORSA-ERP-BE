@@ -29,6 +29,7 @@ const OPTIONAL_COLUMNS = {
   identity_ktp: { type: 'STRING', length: 25 },
   home_phone: { type: 'STRING', length: 20 },
   personal_email: { type: 'STRING', length: 30 },
+  photo: { type: 'STRING', length: 255 },
   applicant_id: { type: 'STRING', length: 15 },
   position_no: { type: 'STRING', length: 15 },
   approval_no: { type: 'STRING', length: 15 },

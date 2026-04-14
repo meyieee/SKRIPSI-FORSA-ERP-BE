@@ -5,6 +5,73 @@
 
 const { safeParseInt, safeParseFloat } = require('./FIAOnlineReqHelpers');
 
+function normalizeTimeField(value) {
+  if (!value || value === '' || (typeof value === 'string' && value.trim() === '')) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed === '' || trimmed.toLowerCase() === 'invalid date') {
+      return null;
+    }
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(trimmed)) {
+      const [datePart, timePart] = trimmed.split('T');
+      const timeWithSeconds = timePart.includes(':') && timePart.split(':').length === 2
+        ? `${timePart}:00`
+        : timePart;
+      return `${datePart} ${timeWithSeconds}`;
+    }
+    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(trimmed)) {
+      return null;
+    }
+  }
+  return value;
+}
+
+function combineDateAndTimeForDateTime(dateValue, timeValue) {
+  const rawDate = String(dateValue || '').trim();
+  const rawTime = String(timeValue || '').trim();
+
+  if (!rawDate || !rawTime) return null;
+  if (rawTime.toLowerCase() === 'invalid date') return null;
+
+  if (/^\d{2}:\d{2}$/.test(rawTime)) {
+    return `${rawDate} ${rawTime}:00`;
+  }
+
+  if (/^\d{2}:\d{2}:\d{2}$/.test(rawTime)) {
+    return `${rawDate} ${rawTime}`;
+  }
+
+  const parsed = new Date(rawTime);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  const hh = String(parsed.getHours()).padStart(2, '0');
+  const mm = String(parsed.getMinutes()).padStart(2, '0');
+  const ss = String(parsed.getSeconds()).padStart(2, '0');
+  return `${rawDate} ${hh}:${mm}:${ss}`;
+}
+
+function extractTimeForFrontend(value) {
+  if (!value) return '';
+
+  if (value instanceof Date) {
+    const hh = String(value.getHours()).padStart(2, '0');
+    const mm = String(value.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+
+  const raw = String(value).trim();
+  if (!raw) return '';
+
+  const match = raw.match(/(\d{2}):(\d{2})(?::\d{2})?/);
+  if (match) {
+    return `${match[1]}:${match[2]}`;
+  }
+
+  return raw;
+}
+
 /**
  * Transform common fields (Header, RequestInfo, WorkflowTracking)
  * Fields yang sama untuk semua request types
@@ -569,32 +636,6 @@ function transformAccommodationRequestToBackend(frontendData) {
   const common = transformCommonFieldsToBackend(frontendData);
   const { extendedRequestDetails, accommodationRequirements, accommodationDetails } = frontendData;
 
-// Di FIAOnlineReqTransformers.js - normalizeTimeField
-const normalizeTimeField = (value) => {
-  if (!value || value === '' || (typeof value === 'string' && value.trim() === '')) {
-    return null;
-  }
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (trimmed === '' || trimmed.toLowerCase() === 'invalid date') {
-      return null;
-    }
-    // datetime-local format: "2024-01-15T14:30"
-    // Return sebagai string dengan format yang benar untuk database
-    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(trimmed)) {
-      // Convert ke format: "YYYY-MM-DD HH:mm:ss"
-      const [datePart, timePart] = trimmed.split('T');
-      const timeWithSeconds = timePart.includes(':') && timePart.split(':').length === 2 
-        ? `${timePart}:00` 
-        : timePart;
-      return `${datePart} ${timeWithSeconds}`; // Format: "2025-12-18 13:01:00"
-    }
-    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(trimmed)) {
-      return null;
-    }
-  }
-  return value;
-};  
   return {
     ...common,
     // Extended Request Details fields
@@ -721,7 +762,7 @@ function transformVisitorRequestToBackend(frontendData) {
     contact: visitorDetails?.contactNoEmail || '',
     // Visit Details fields
     date_visit: visitDetails?.dateOfVisit || null,
-    time_visit: visitDetails?.timeOfVisit || null,
+    time_visit: combineDateAndTimeForDateTime(visitDetails?.dateOfVisit, visitDetails?.timeOfVisit),
     expected_duration: visitDetails?.expectedDuration || '',
     // Host Details fields
     host_name: hostDetails?.hostName || '',
@@ -761,7 +802,7 @@ function transformVisitorRequestToFrontend(backendData) {
     },
     visitDetails: {
       dateOfVisit: backendData.date_visit || '',
-      timeOfVisit: backendData.time_visit || '',
+      timeOfVisit: extractTimeForFrontend(backendData.time_visit),
       expectedDuration: backendData.expected_duration || ''
     },
     hostDetails: {
