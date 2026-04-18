@@ -4,8 +4,8 @@
  */
 
 const FIAOnlineReq = require('../models/adm_fia_online_req');
-const { processDateFields, getRequestTypePrefix, formatRefRequestNo } = require('./FIAOnlineReqHelpers');
-const { APPROVAL_STATUS } = require('./FIAOnlineReqConstants');
+const { Op } = require('sequelize');
+const { processDateFields, getRequestTypePrefix, formatRefRequestNo, getRefRequestPeriod } = require('./FIAOnlineReqHelpers');
 
 /**
  * Generate ref_request_no berdasarkan request_type
@@ -16,18 +16,23 @@ const { APPROVAL_STATUS } = require('./FIAOnlineReqConstants');
 async function generateRefRequestNo(requestType) {
   try {
     const prefix = getRequestTypePrefix(requestType);
+    const period = getRefRequestPeriod();
+    const refPrefix = `${prefix}${period}-`;
     
-    // Ambil record terakhir dengan request_type yang sama
     const lastRecord = await FIAOnlineReq.findOne({
-      where: { request_type: requestType },
-      order: [['id', 'DESC']],
+      where: {
+        request_type: requestType,
+        ref_request_no: {
+          [Op.like]: `${refPrefix}%`
+        }
+      },
+      order: [['ref_request_no', 'DESC']],
       raw: true
     });
 
     let nextNumber = 1;
     
     if (lastRecord && lastRecord.ref_request_no) {
-      // Extract number dari ref_request_no (format: JOB-001)
       const parts = lastRecord.ref_request_no.split('-');
       if (parts.length === 2) {
         const lastNumber = parseInt(parts[1], 10);
@@ -37,7 +42,6 @@ async function generateRefRequestNo(requestType) {
       }
     }
 
-    // Format: JOB-001, JOB-002, dst.
     return formatRefRequestNo(prefix, nextNumber);
   } catch (error) {
     throw new Error(`Failed to generate ref_request_no: ${error.message}`);
@@ -96,13 +100,8 @@ async function create(data) {
     // Process date fields
     const processedData = processDateFields(data);
     
-    // Set approval_status otomatis jika is_draft = false (submit final)
-    // Draft tidak perlu status, biarkan default ''
-    if (processedData.is_draft === false || processedData.is_draft === 0) {
-      // Jika approval_status belum di-set, set ke "Waiting for approval"
-      if (!processedData.approval_status || processedData.approval_status === '') {
-        processedData.approval_status = APPROVAL_STATUS.WAITING_FOR_APPROVAL;
-      }
+    if (processedData.approval_status == null) {
+      processedData.approval_status = '';
     }
     
     const created = await FIAOnlineReq.create(processedData);

@@ -1,9 +1,10 @@
 /**
  * Inspection Defect Repository
- * Handle inspection defect requests dengan defect details di tabel terpisah
+ * Handle inspection defect requests
  */
 
 const BaseRepository = require('./FIAOnlineReqBaseRepository');
+const { formatLocalDate } = require('./DateOnlyHelper');
 const {
   transformInspectionDefectToBackend,
   transformInspectionDefectToFrontend
@@ -24,9 +25,9 @@ function transformToBackend(frontendData) {
 }
 
 /**
- * Transform backend data to frontend format (include defect details)
+ * Transform backend data to frontend format
  * @param {object} backendData - Data dari database
- * @returns {Promise<object>} Data dalam format frontend dengan defect details
+ * @returns {Promise<object>} Data dalam format frontend
  */
 async function transformToFrontend(backendData) {
   if (!backendData) return null;
@@ -34,28 +35,7 @@ async function transformToFrontend(backendData) {
   // Transform main record
   const frontendData = transformInspectionDefectToFrontend(backendData);
   
-  // Load defect details from separate table
-  const InspectionDefectModel = require('../models/adm_fia_online_req_inspect');
-  const defectDetails = await InspectionDefectModel.findAll({
-    where: { ref_request_no: backendData.ref_request_no },
-    order: [['id', 'ASC']],
-    raw: true
-  });
-  
-  // Transform defect details to frontend format
-  frontendData.defectDetails = defectDetails.map((defect, index) => ({
-    id: defect.id.toString(),
-    no: index + 1,
-    defectDescription: defect.defect_description || '',
-    condition: defect.condition_status || 'Good',
-    category: defect.category || 'Mechanical',
-    recommendedAction: defect.recommended_action || '',
-    assignedTo: defect.assigned_to || '',
-    dueDate: defect.due_date ? defect.due_date.toISOString().slice(0, 10) : '',
-    actionTaken: defect.action_taken || 'None',
-    result: defect.result || 'Pass',
-    status: defect.status || 'Open'
-  }));
+  frontendData.defectDetails = [];
   
   return frontendData;
 }
@@ -114,33 +94,8 @@ async function create(frontendData) {
   // Create main record in database
   await BaseRepository.create(backendData);
   
-  // Get ref_request_no
-  const refRequestNo = backendData.ref_request_no;
+  const created = await BaseRepository.getByRefNo(backendData.ref_request_no);
   
-  // Create defect details records
-  if (frontendData.defectDetails && frontendData.defectDetails.length > 0) {
-    const InspectionDefectModel = require('../models/adm_fia_online_req_inspect');
-    
-    for (const defect of frontendData.defectDetails) {
-      await InspectionDefectModel.create({
-        ref_request_no: refRequestNo,
-        defect_description: defect.defectDescription || '',
-        condition_status: defect.condition || '',
-        category: defect.category || '',
-        recommended_action: defect.recommendedAction || '',
-        assigned_to: defect.assignedTo || '',
-        due_date: defect.dueDate || null,
-        action_taken: defect.actionTaken || '',
-        result: defect.result || '',
-        status: defect.status || ''
-      });
-    }
-  }
-  
-  // Retrieve created record with defect details
-  const created = await BaseRepository.getByRefNo(refRequestNo);
-  
-  // Transform to frontend format (include defect details)
   return transformToFrontend(created);
 }
 
@@ -171,34 +126,6 @@ async function update(frontendData, id) {
   // Update main record in database
   await BaseRepository.update(backendData, id);
   
-  // Update defect details
-  const refRequestNo = existing.ref_request_no;
-  const InspectionDefectModel = require('../models/adm_fia_online_req_inspect');
-  
-  // Delete all existing defect details
-  await InspectionDefectModel.destroy({
-    where: { ref_request_no: refRequestNo }
-  });
-  
-  // Create new defect details
-  if (frontendData.defectDetails && frontendData.defectDetails.length > 0) {
-    for (const defect of frontendData.defectDetails) {
-      await InspectionDefectModel.create({
-        ref_request_no: refRequestNo,
-        defect_description: defect.defectDescription || '',
-        condition_status: defect.condition || '',
-        category: defect.category || '',
-        recommended_action: defect.recommendedAction || '',
-        assigned_to: defect.assignedTo || '',
-        due_date: defect.dueDate || null,
-        action_taken: defect.actionTaken || '',
-        result: defect.result || '',
-        status: defect.status || ''
-      });
-    }
-  }
-  
-  // Retrieve updated record with defect details
   const updated = await BaseRepository.getById(id);
   
   // Transform to frontend format
@@ -216,7 +143,7 @@ async function getList(filters = {}) {
     request_type: REQUEST_TYPE
   });
   
-  // Transform each item to frontend format (include defect details)
+  // Transform each item to frontend format
   const transformedData = await Promise.all(
     result.data.map(item => transformToFrontend(item))
   );
@@ -252,7 +179,7 @@ async function getNewForm() {
       refRequestNo: refRequestNo,
     },
     requestInfo: {
-      requestDate: new Date().toISOString().slice(0, 10),
+      requestDate: formatLocalDate(new Date()),
       requestBy: '',
       requestFor: '',
       requestPurpose: '',
@@ -278,21 +205,7 @@ async function getNewForm() {
       notesComments: '',
       additionalNotes: ''
     },
-    defectDetails: [
-      {
-        id: Date.now().toString(),
-        no: 1,
-        defectDescription: '',
-        condition: 'Good',
-        category: 'Mechanical',
-        recommendedAction: '',
-        assignedTo: '',
-        dueDate: '',
-        actionTaken: 'None',
-        result: 'Pass',
-        status: 'Open'
-      }
-    ],
+    defectDetails: [],
     approvals: {
       immediateSupervisor: '',
       departmentHead: '',

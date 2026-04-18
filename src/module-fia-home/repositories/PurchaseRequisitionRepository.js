@@ -3,6 +3,7 @@
  */
 
 const BaseRepository = require('./FIAOnlineReqBaseRepository');
+const { formatLocalDate } = require('./DateOnlyHelper');
 const {
   transformPurchaseRequisitionToBackend,
   transformPurchaseRequisitionToFrontend
@@ -23,7 +24,7 @@ function transformToBackend(frontendData) {
 }
 
 /**
- * Transform backend data to frontend format (async untuk load item details)
+ * Transform backend data to frontend format
  * @param {object} backendData - Data dari database
  * @returns {Promise<object>} Data dalam format frontend
  */
@@ -32,40 +33,10 @@ async function transformToFrontend(backendData) {
 
   const baseTransformed = transformPurchaseRequisitionToFrontend(backendData);
 
-  // Load item details dari tabel adm_fia_online_req_itempurchasereq
-  const ItemPurchaseReqModel = require('../models/adm_fia_online_req_itempurchasereq');
-  const itemDetails = await ItemPurchaseReqModel.findAll({
-    where: {
-      ref_request_no: backendData.ref_request_no
-    },
-    order: [['id', 'ASC']],
-    raw: true
-  });
-
-  // Transform item details ke format frontend
-  const transformedItems = itemDetails.map((item, index) => ({
-    id: item.id.toString(),
-    no: index + 1,
-    ref_request_no: item.ref_request_no || '',
-    stockcode: item.stockcode || '',
-    stock_description: item.stock_description || '',
-    item_type: item.item_type || '',
-    quantity: item.quantity ? item.quantity.toString() : '',
-    unit_price: item.unit_price ? item.unit_price.toString() : '',
-    totalPrice: item.quantity && item.unit_price 
-      ? (parseFloat(item.quantity) * parseFloat(item.unit_price)).toFixed(2)
-      : '0.00'
-  }));
-
-  // Calculate estimated total cost
-  const estimatedTotalCost = transformedItems.reduce((sum, item) => {
-    return sum + parseFloat(item.totalPrice || '0');
-  }, 0).toFixed(2);
-
   return {
     ...baseTransformed,
-    itemDetails: transformedItems,
-    estimatedTotalCost: estimatedTotalCost
+    itemDetails: [],
+    estimatedTotalCost: '0.00'
   };
 }
 
@@ -123,26 +94,6 @@ async function create(frontendData) {
   // Create main record in database
   await BaseRepository.create(backendData);
   
-  // Create item details
-  if (frontendData.itemDetails && frontendData.itemDetails.length > 0) {
-    const ItemPurchaseReqModel = require('../models/adm_fia_online_req_itempurchasereq');
-    const itemDetailsToCreate = frontendData.itemDetails
-      .filter(item => item.stock_description && item.stock_description.trim() !== '')
-      .map(item => ({
-        ref_request_no: backendData.ref_request_no,
-        stockcode: item.stockcode || '',
-        stock_description: item.stock_description || '',
-        item_type: item.item_type || '',
-        quantity: parseInt(item.quantity) || 0,
-        unit_price: parseFloat(item.unit_price) || 0
-      }));
-
-    if (itemDetailsToCreate.length > 0) {
-      await ItemPurchaseReqModel.bulkCreate(itemDetailsToCreate);
-    }
-  }
-  
-  // Retrieve created record dengan item details
   const created = await BaseRepository.getByRefNo(backendData.ref_request_no);
   
   // Transform to frontend format
@@ -176,32 +127,6 @@ async function update(frontendData, id) {
   // Update main record in database
   await BaseRepository.update(backendData, id);
   
-  // Update item details: delete all existing, then insert new ones
-  const ItemPurchaseReqModel = require('../models/adm_fia_online_req_itempurchasereq');
-  await ItemPurchaseReqModel.destroy({
-    where: {
-      ref_request_no: existing.ref_request_no
-    }
-  });
-
-  if (frontendData.itemDetails && frontendData.itemDetails.length > 0) {
-    const itemDetailsToCreate = frontendData.itemDetails
-      .filter(item => item.stock_description && item.stock_description.trim() !== '')
-      .map(item => ({
-        ref_request_no: existing.ref_request_no,
-        stockcode: item.stockcode || '',
-        stock_description: item.stock_description || '',
-        item_type: item.item_type || '',
-        quantity: parseInt(item.quantity) || 0,
-        unit_price: parseFloat(item.unit_price) || 0
-      }));
-
-    if (itemDetailsToCreate.length > 0) {
-      await ItemPurchaseReqModel.bulkCreate(itemDetailsToCreate);
-    }
-  }
-  
-  // Retrieve updated record
   const updated = await BaseRepository.getById(id);
   
   // Transform to frontend format
@@ -256,7 +181,7 @@ async function getNewForm() {
       fullPaymentMethod: ''
     },
     requestInfo: {
-      requisitionDate: new Date().toISOString().slice(0, 10),
+      requisitionDate: formatLocalDate(new Date()),
       requestBy: '',
       requestByJobTitle: '',
       requestFor: '',
@@ -283,18 +208,7 @@ async function getNewForm() {
       supplierContact: '',
       comments: ''
     },
-    itemDetails: [
-      {
-        id: '1',
-        no: 1,
-        stockcode: '',
-        stock_description: '',
-        item_type: '',
-        quantity: '',
-        unit_price: '',
-        totalPrice: ''
-      }
-    ],
+    itemDetails: [],
     estimatedTotalCost: '0.00',
     remark: '',
     internalNote: '',

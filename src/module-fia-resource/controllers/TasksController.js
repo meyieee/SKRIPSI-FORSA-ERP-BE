@@ -47,6 +47,7 @@ async function getLoginEmp(reqUser, sequelizeInstance) {
       attributes: [
         "id",
         "id_number",
+        "branch_code",
         "first_name",
         "middle_name",
         "last_name",
@@ -71,6 +72,7 @@ async function getLoginEmp(reqUser, sequelizeInstance) {
         attributes: [
           "id",
           "id_number",
+          "branch_code",
           "first_name",
           "middle_name",
           "last_name",
@@ -99,6 +101,7 @@ async function getLoginEmp(reqUser, sequelizeInstance) {
     attributes: [
       "id",
       "id_number",
+      "branch_code",
       "first_name",
       "middle_name",
       "last_name",
@@ -109,6 +112,15 @@ async function getLoginEmp(reqUser, sequelizeInstance) {
       "individual_level",
     ],
   });
+}
+
+function getLoginBranchCode(reqUser, loginEmp) {
+  return String(
+    reqUser?.branch_code ||
+      reqUser?.branchCode ||
+      loginEmp?.branch_code ||
+      ""
+  ).trim();
 }
 
 function getEmployeeHierarchyLevel(empRow) {
@@ -482,6 +494,7 @@ module.exports = {
       const senderEmp = await getLoginEmp(req.user, Task.sequelize);
       const senderDisplayName = getEmpDisplayName(senderEmp, user.name || "");
       const senderLevel = getEmployeeHierarchyLevel(senderEmp);
+      const senderBranchCode = getLoginBranchCode(req.user, senderEmp);
 
       const {
         assignedToId,
@@ -513,14 +526,22 @@ module.exports = {
           .json({ message: "Unable to determine your employee level" });
       }
 
+      if (!senderBranchCode) {
+        return res
+          .status(400)
+          .json({ message: "Unable to determine your branch/company" });
+      }
+
       const Emp = Task.sequelize?.models?.tbl_emp_regs || EmpReg;
       const assignedToEmp = await Emp.findOne({
         where: {
           id_number: String(assignedToId).trim(),
           status: "Active",
+          branch_code: senderBranchCode,
         },
         attributes: [
           "id_number",
+          "branch_code",
           "first_name",
           "middle_name",
           "last_name",
@@ -534,7 +555,9 @@ module.exports = {
       });
 
       if (!assignedToEmp) {
-        return res.status(404).json({ message: "Assigned employee not found" });
+        return res.status(404).json({
+          message: "Assigned employee not found in your company/branch",
+        });
       }
 
       const assignedToLevel = getEmployeeHierarchyLevel(assignedToEmp);
@@ -649,8 +672,15 @@ module.exports = {
 
       let loginLevel = null;
       let loginIdNumber = "";
+      let loginBranchCode = "";
+      const loginEmp = await getLoginEmp(req.user, Task.sequelize);
+      loginBranchCode = getLoginBranchCode(req.user, loginEmp);
+
+      if (!loginBranchCode) {
+        return res.status(200).json({ message: "OK", data: [] });
+      }
+
       if (lowerThanLogin) {
-        const loginEmp = await getLoginEmp(req.user, Task.sequelize);
         loginLevel = getEmployeeHierarchyLevel(loginEmp);
         loginIdNumber = String(loginEmp?.id_number || "").trim();
 
@@ -676,6 +706,7 @@ module.exports = {
         ],
         where: {
           status: "Active",
+          branch_code: loginBranchCode,
           [Op.or]: [
             { id_number: { [Op.like]: `%${q}%` } },
             { first_name: { [Op.like]: `%${q}%` } },

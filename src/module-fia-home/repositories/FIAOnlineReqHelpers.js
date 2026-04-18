@@ -60,6 +60,13 @@ const DATE_FIELDS = [
 // Reference number padding
 const REF_REQUEST_NO_PADDING = 3;
 
+function getRefRequestPeriod(date = new Date()) {
+  const dt = date instanceof Date ? date : new Date(date);
+  const year = String(dt.getFullYear()).slice(-2);
+  const month = String(dt.getMonth() + 1).padStart(2, '0');
+  return `${year}${month}`;
+}
+
 /**
  * Get prefix untuk ref_request_no berdasarkan request_type
  * @param {string} requestType - Request type dari frontend (e.g., 'job-request')
@@ -150,8 +157,8 @@ function processDateFields(data) {
  * @param {number} number - Number untuk ref_request_no
  * @returns {string} Formatted ref_request_no (e.g., 'TRQ-001')
  */
-function formatRefRequestNo(prefix, number) {
-  return `${prefix}-${String(number).padStart(REF_REQUEST_NO_PADDING, '0')}`;
+function formatRefRequestNo(prefix, number, date = new Date()) {
+  return `${prefix}${getRefRequestPeriod(date)}-${String(number).padStart(REF_REQUEST_NO_PADDING, '0')}`;
 }
 
 module.exports = {
@@ -162,6 +169,7 @@ module.exports = {
   REF_REQUEST_NO_PADDING,
   
   // Helper functions
+  getRefRequestPeriod,
   getRequestTypePrefix,
   validateRequestType,
   safeParseInt,

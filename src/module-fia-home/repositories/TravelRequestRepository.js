@@ -1,9 +1,10 @@
 /**
  * Travel Request Repository
- * Handle travel requests dengan travelers di tabel terpisah
+ * Handle travel requests
  */
 
 const BaseRepository = require('./FIAOnlineReqBaseRepository');
+const { formatLocalDate } = require('./DateOnlyHelper');
 const {
   transformTravelRequestToBackend,
   transformTravelRequestToFrontend
@@ -24,9 +25,9 @@ function transformToBackend(frontendData) {
 }
 
 /**
- * Transform backend data to frontend format (include travelers)
+ * Transform backend data to frontend format
  * @param {object} backendData - Data dari database
- * @returns {Promise<object>} Data dalam format frontend dengan travelers
+ * @returns {Promise<object>} Data dalam format frontend
  */
 async function transformToFrontend(backendData) {
   if (!backendData) return null;
@@ -34,22 +35,7 @@ async function transformToFrontend(backendData) {
   // Transform main record
   const frontendData = transformTravelRequestToFrontend(backendData);
   
-  // Load travelers from separate table
-  const TravelerModel = require('../models/adm_fia_online_req_traveller');
-  const travelers = await TravelerModel.findAll({
-    where: { ref_request_no: backendData.ref_request_no },
-    order: [['id', 'ASC']],
-    raw: true
-  });
-  
-  // Transform travelers to frontend format
-  frontendData.travelers = travelers.map((traveler, index) => ({
-    no: index + 1,
-    lastName: traveler.last_name || '',
-    firstName: traveler.first_name || '',
-    category: traveler.category || '',
-    comments: traveler.comments || ''
-  }));
+  frontendData.travelers = [];
   
   return frontendData;
 }
@@ -108,28 +94,8 @@ async function create(frontendData) {
   // Create main record in database
   await BaseRepository.create(backendData);
   
-  // Get ref_request_no
-  const refRequestNo = backendData.ref_request_no;
+  const created = await BaseRepository.getByRefNo(backendData.ref_request_no);
   
-  // Create traveler records
-  if (frontendData.travelers && frontendData.travelers.length > 0) {
-    const TravelerModel = require('../models/adm_fia_online_req_traveller');
-    
-    for (const traveler of frontendData.travelers) {
-      await TravelerModel.create({
-        ref_request_no: refRequestNo,
-        last_name: traveler.lastName || '',
-        first_name: traveler.firstName || '',
-        category: traveler.category || '',
-        comments: traveler.comments || ''
-      });
-    }
-  }
-  
-  // Retrieve created record with travelers
-  const created = await BaseRepository.getByRefNo(refRequestNo);
-  
-  // Transform to frontend format (include travelers)
   return transformToFrontend(created);
 }
 
@@ -160,29 +126,6 @@ async function update(frontendData, id) {
   // Update main record in database
   await BaseRepository.update(backendData, id);
   
-  // Update travelers
-  const refRequestNo = existing.ref_request_no;
-  const TravelerModel = require('../models/adm_fia_online_req_traveller');
-  
-  // Delete all existing travelers
-  await TravelerModel.destroy({
-    where: { ref_request_no: refRequestNo }
-  });
-  
-  // Create new travelers
-  if (frontendData.travelers && frontendData.travelers.length > 0) {
-    for (const traveler of frontendData.travelers) {
-      await TravelerModel.create({
-        ref_request_no: refRequestNo,
-        last_name: traveler.lastName || '',
-        first_name: traveler.firstName || '',
-        category: traveler.category || '',
-        comments: traveler.comments || ''
-      });
-    }
-  }
-  
-  // Retrieve updated record with travelers
   const updated = await BaseRepository.getById(id);
   
   // Transform to frontend format
@@ -200,7 +143,7 @@ async function getList(filters = {}) {
     request_type: REQUEST_TYPE
   });
   
-  // Transform each item to frontend format (include travelers)
+  // Transform each item to frontend format
   const transformedData = await Promise.all(
     result.data.map(item => transformToFrontend(item))
   );
@@ -236,7 +179,7 @@ async function getNewForm() {
       refRequestNo: refRequestNo,
     },
     requestInfo: {
-      requestDate: new Date().toISOString().slice(0, 10),
+      requestDate: formatLocalDate(new Date()),
       requestBy: '',
       requestByJobTitle: '',
       requestFor: '',
@@ -275,15 +218,7 @@ async function getNewForm() {
       lessStatutoryPublicHolidaySundayIncluded: 0,
       netWorkingDaysLeaveRequested: 0
     },
-    travelers: [
-      {
-        no: 1,
-        lastName: '',
-        firstName: '',
-        category: '',
-        comments: ''
-      }
-    ],
+    travelers: [],
     workflowTracking: {
       checkBy: '',
       checkDate: '',

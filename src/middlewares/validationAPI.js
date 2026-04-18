@@ -45,7 +45,10 @@ const validSession = async (req, res, next) => {
       });
     }
 
-    user.branch_code = currentUser['employees.branch_detail.branch_code'];
+    user.branch_code =
+      currentUser['employees.branch_detail.com_code'] ||
+      currentUser.branch_code ||
+      currentUser['employees.branch_detail.branch_code'];
     user.com_type = currentUser['employees.branch_detail.com_type'];
     user.id_number = currentUser.id_number || currentUser['employees.id_number'];
     user.roleId = user.roleId || user.role_id || currentUser.role_id; // Attach roleId for RBAC

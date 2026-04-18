@@ -1,6 +1,7 @@
 const Com = require("../models/adm_cf_00_coms"); //CF - MASTER / SCM
 const CostCenter = require("../models/adm_cf_13_costcenter");
 const Department = require("../models/adm_cf_11_dept") 
+const Section = require("../models/adm_cf_11_depts_section")
 const Account = require("../models/adm_cf_14_account")
 const LocWork = require("../models/adm_cf_18_locwork") 
 const Location = require("../models/adm_cf_17_location") 
@@ -28,6 +29,15 @@ const getModelDepartment = (alias, atts) =>{
   const fieldAttributes = atts || ['dept_des']
   return {
     model: Department,
+    as:  alias,
+    attributes: fieldAttributes
+  };
+}
+
+const getModelSection = (alias, atts) =>{
+  const fieldAttributes = atts || ['section_description']
+  return {
+    model: Section,
     as:  alias,
     attributes: fieldAttributes
   };
@@ -69,4 +79,4 @@ const getModelLocation = (alias, atts) =>{
   };
 }
 
-module.exports = { getModelCom, getModelCostCenter, getModelAccount, getModelDepartment, getModelLockWork, getModelCurrency, getModelLocation };
+module.exports = { getModelCom, getModelCostCenter, getModelAccount, getModelDepartment, getModelSection, getModelLockWork, getModelCurrency, getModelLocation };
