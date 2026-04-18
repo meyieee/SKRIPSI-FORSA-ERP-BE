@@ -24,7 +24,10 @@ const OfficerTypeController = require('../controllers/OfficerTypeController');
 const validationAPI = require('../../middlewares/validationAPI')
 const { uploadSingleImage, uploadMultipleDocuments, uploadMultipleImage, uploadSingleDocument } = require('../../middlewares/multer');
 const { checkPermissionByRoute, checkAnyPermissionByRoute } = require('../../middlewares/rbac');
+const RbacAdminController = require('../controllers/RbacAdminController');
 const COM_TYPE  = require('../../constants')
+
+const RBAC_ADMIN_ROUTE = '/controls/rbac-features';
 
 const UserRouter = (router) =>{
     // | Users Routers
@@ -48,6 +51,50 @@ const UserRouter = (router) =>{
     // | Users V1 Routers
     router.get('/v1/roles', validationAPI, UserController.getRolesV1);
     router.post('/v1/users/create', validationAPI, checkPermissionByRoute('/controls/create-user', 'Create'), UserController.postCreateUserV1);
+
+    // | RBAC admin (feature + role-privilege matrix) — gated by permissions on RBAC_ADMIN_ROUTE
+    router.get(
+      '/v1/rbac-admin/privileges',
+      validationAPI,
+      checkPermissionByRoute(RBAC_ADMIN_ROUTE, 'Read'),
+      RbacAdminController.getPrivilegesCatalog
+    );
+    router.get(
+      '/v1/rbac-admin/features',
+      validationAPI,
+      checkPermissionByRoute(RBAC_ADMIN_ROUTE, 'Read'),
+      RbacAdminController.getFeatures
+    );
+    router.get(
+      '/v1/rbac-admin/features/:id/role-privileges',
+      validationAPI,
+      checkPermissionByRoute(RBAC_ADMIN_ROUTE, 'Read'),
+      RbacAdminController.getFeatureRolePrivileges
+    );
+    router.get(
+      '/v1/rbac-admin/features/:id',
+      validationAPI,
+      checkPermissionByRoute(RBAC_ADMIN_ROUTE, 'Read'),
+      RbacAdminController.getFeature
+    );
+    router.post(
+      '/v1/rbac-admin/features',
+      validationAPI,
+      checkPermissionByRoute(RBAC_ADMIN_ROUTE, 'Create'),
+      RbacAdminController.postFeature
+    );
+    router.put(
+      '/v1/rbac-admin/features/:id/role-privileges',
+      validationAPI,
+      checkPermissionByRoute(RBAC_ADMIN_ROUTE, 'Update'),
+      RbacAdminController.putFeatureRolePrivileges
+    );
+    router.put(
+      '/v1/rbac-admin/features/:id',
+      validationAPI,
+      checkPermissionByRoute(RBAC_ADMIN_ROUTE, 'Update'),
+      RbacAdminController.putFeature
+    );
     
     // ============================================
     // RBAC Test Endpoints
