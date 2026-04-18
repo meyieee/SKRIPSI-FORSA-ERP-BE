@@ -110,6 +110,19 @@ module.exports = {
       await User.create({id_number, name, password: users_default_password, role, status: true},{ transaction });
     },
 
+    postUserV1Repository: async(data)=>{
+      const { id_number, role_id, user_name, password } = data;
+      // Hook di User.js sudah memproses bcrypt hash untuk password,
+      // serta menyelaraskan sinkronisasi `role` dari `role_id`.
+      await User.create({
+        id_number: id_number,
+        name: user_name,
+        role_id: role_id,
+        password: password,
+        status: true
+      });
+    },
+
     updateUserRepository: async(data, id)=>{
       await User.update(data, {where: {id}});
     },

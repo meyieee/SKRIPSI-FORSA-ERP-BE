@@ -45,6 +45,10 @@ const UserRouter = (router) =>{
     router.put('/users/password/:id_number', validationAPI, UserController.resetPasswordUser);
     router.put('/users/:id/status', validationAPI, UserController.updateStatusUser);
     
+    // | Users V1 Routers
+    router.get('/v1/roles', validationAPI, UserController.getRolesV1);
+    router.post('/v1/users/create', validationAPI, checkPermissionByRoute('/controls/create-user', 'Create'), UserController.postCreateUserV1);
+    
     // ============================================
     // RBAC Test Endpoints
     // ============================================

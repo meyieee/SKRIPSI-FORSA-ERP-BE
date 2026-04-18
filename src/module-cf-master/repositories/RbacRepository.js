@@ -24,6 +24,19 @@ module.exports = {
     }
   },
 
+  getAllActiveRoles: async () => {
+    try {
+      const roles = await adm_fia_control_user_role.findAll({
+        attributes: ['id', 'role_name', 'description'],
+        raw: true,
+      });
+      return roles;
+    } catch (error) {
+      console.error('Error in getAllActiveRoles:', error);
+      throw error;
+    }
+  },
+
   /**
    * Get all permissions for a role (for login response)
    * @param {number} roleId - Role ID

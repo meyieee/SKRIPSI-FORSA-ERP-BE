@@ -4,7 +4,7 @@ const { JwtToken, JwtRefreshToken } = require('../../function/jwt');
 const { 
         getUserByNameRepository, getUsersRepository, getUserByIdNumberRepository, getUserByIdRepository,
         postUserRepository, postFirstUserRepository, updateUserRepository, updateUserStatusRepository, postTokenBlackListRepository,
-        getExistUsersRepository
+        getExistUsersRepository, postUserV1Repository
       } = require('../repositories/UserRepository');
 const { checkingExistingCompanyRepository, postComByFirstRegisterUserRepository } = require('../repositories/ComRepository')
 const { users_default_password, company } = require('../../constants')
@@ -97,6 +97,16 @@ const loadRoleCategories = async () => {
   } catch (roleError) {
     console.error('Error loading role categories:', roleError);
     throw roleError;
+  }
+};
+
+const loadActiveRoles = async () => {
+  const { getAllActiveRoles } = require('../repositories/RbacRepository');
+  try {
+    return await getAllActiveRoles();
+  } catch (err) {
+    console.error('Error loading active roles:', err);
+    throw err;
   }
 };
 
@@ -328,6 +338,59 @@ module.exports = {
   
       socketEmitRoom(company, 'users', await getUsersRepository())
       socketEmitRoom(branch_code, `users_${branch_code}`, await getUsersRepository(branch_code))
+      
+      return res.status(200).send({
+        message: 'Sucessfully created user.'
+      });
+    } catch (err) {
+      return res.status(500).send({ message: err.message });
+    }
+  },
+
+  getRolesV1: async (req, res) => {
+    try {
+      const roles = await loadActiveRoles();
+      return res.status(200).send({
+        message: "Successfully fetched active roles.",
+        data: roles
+      });
+    } catch (err) {
+      return res.status(500).send({ message: err.message });
+    }
+  },
+
+  postCreateUserV1: async (req, res) => {
+    // Expected payload: { employee_id, role_id, user_name, password }
+    const { employee_id, role_id, user_name, password } = req.body;
+    try {
+      if (!employee_id || !role_id || !user_name || !password) {
+        return res.status(400).send({ message: "All fields are required: employee_id, role_id, user_name, password" });
+      }
+
+      const userCheckByName = await getUserByNameRepository(user_name);
+      if(userCheckByName) {
+        return res.status(409).send({
+          message: "Username already exists. Please use a different one.",
+        });
+      }
+
+      const id_number = employee_id.toString(); 
+
+      const userCheckByUserIdNumber = await getUserByIdNumberRepository(id_number);
+      if(userCheckByUserIdNumber) {
+        return res.status(409).send({
+          message: "Employee already registered. Please use a different one.",
+        });
+      }
+
+      await postUserV1Repository({
+        id_number: id_number,
+        role_id: role_id,
+        user_name: user_name,
+        password: password
+      });
+  
+      socketEmitRoom(company, 'users', await getUsersRepository());
       
       return res.status(200).send({
         message: 'Sucessfully created user.'
