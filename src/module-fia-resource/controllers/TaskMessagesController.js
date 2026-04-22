@@ -4,7 +4,7 @@ const path = require("path");
 const TaskMessage = require("../models/fia_res_online_feeds_tasks_messages");
 const Task = require("../models/fia_res_online_feeds_tasks"); // ✅ sesuaikan bila beda nama/path
 const EmpReg = require("../../module-hr/models/tbl_emp_regs");
-const { socketEmitGlobal } = require("../../function/socketEmit");
+const { socketEmitRoom } = require("../../function/socketEmit");
 const {
   getUserByNameRepository,
 } = require("../../module-cf-master/repositories/UserRepository");
@@ -117,6 +117,18 @@ function safeParseAttachments(txt) {
   } catch {
     return [];
   }
+}
+
+function emitTaskMessageToMembers(task, event, payload) {
+  const rooms = new Set(
+    [task?.assigned_by_id, task?.assigned_to_id]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean)
+  );
+
+  rooms.forEach((room) => {
+    socketEmitRoom(room, event, payload);
+  });
 }
 
 // ✅ bikin url relative dari folder public secara aman
@@ -266,7 +278,7 @@ module.exports = {
         deleted_at: null,
       });
 
-      socketEmitGlobal("tasks-message", {
+      emitTaskMessageToMembers(ctx.task, "tasks-message", {
         id: row.id,
         task_id: row.task_id,
         sender_id: String(senderIdNumber),
@@ -342,6 +354,15 @@ module.exports = {
       }
 
       await row.update({ deleted_at: new Date() });
+
+      emitTaskMessageToMembers(ctx.task, "tasks-message-deleted", {
+        id: row.id,
+        task_id: row.task_id,
+        sender_id: row.sender_id,
+        assigned_by_id: ctx.task?.assigned_by_id,
+        assigned_to_id: ctx.task?.assigned_to_id,
+      });
+
       return res.status(200).json({ message: "Message deleted" });
     } catch (err) {
       console.error("deleteMessage error:", err);
