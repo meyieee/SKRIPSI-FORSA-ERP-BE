@@ -208,7 +208,7 @@ module.exports = {
    return await EmployeeRegister.findOne({
       raw: true,
       where: {id_number},
-      attributes:['id', 'id_number']
+      attributes:['id', 'id_number', 'branch_code']
     })
   },
 

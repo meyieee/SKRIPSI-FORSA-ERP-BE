@@ -9,7 +9,7 @@ const {
 const { checkingExistingCompanyRepository, postComByFirstRegisterUserRepository } = require('../repositories/ComRepository')
 const { users_default_password, company } = require('../../constants')
 const { sequelize } = require('../../models');
-const { getAllEmployeeRepository, postEmployeeByFirstRegisterUserRepository } = require('../../module-hr/repositories/EmployeeRegisterRepository');
+const { getAllEmployeeRepository, getEmployeeRegisterByIdNumberRepository, postEmployeeByFirstRegisterUserRepository } = require('../../module-hr/repositories/EmployeeRegisterRepository');
 
 const normalizePermissions = (permissions) => {
   if (!Array.isArray(permissions)) return [];
@@ -389,8 +389,14 @@ module.exports = {
         user_name: user_name,
         password: password
       });
+
+      const employee = await getEmployeeRegisterByIdNumberRepository(id_number);
+      const branch_code = employee?.branch_code;
   
       socketEmitRoom(company, 'users', await getUsersRepository());
+      if (branch_code) {
+        socketEmitRoom(branch_code, `users_${branch_code}`, await getUsersRepository(branch_code));
+      }
       
       return res.status(200).send({
         message: 'Sucessfully created user.'
@@ -443,12 +449,19 @@ module.exports = {
       
       await  updateUserRepository(req.body, id)
       
-      const branch_code = user['employees.branch_detail.branch_code']
+      const branch_code =
+        user['employees.branch_detail.com_code'] ||
+        user.branch_code ||
+        null
     
       socketEmitRoom(company, 'users', await getUsersRepository())
-      socketEmitRoom(branch_code, `users_${branch_code}`, await getUsersRepository(branch_code))
+      if (branch_code) {
+        socketEmitRoom(branch_code, `users_${branch_code}`, await getUsersRepository(branch_code))
+      }
 
-      socketEmitRoom(branch_code,`users_${id}`, await getUserByIdRepository(id))
+      if (branch_code) {
+        socketEmitRoom(branch_code,`users_${id}`, await getUserByIdRepository(id))
+      }
       socketEmitRoom(company,`users_${id}`, await getUserByIdRepository(id))
       
        return res.status(200).send({
@@ -521,12 +534,17 @@ module.exports = {
         });
       }
 
-      const branch_code = findUser['employees.branch_code']
+      const branch_code =
+        findUser['employees.branch_detail.com_code'] ||
+        findUser.branch_code ||
+        null
      
       await updateUserStatusRepository(status, remarks, id)
      
       socketEmitRoom(company, 'users', await getUsersRepository())
-      socketEmitRoom(branch_code, `users_${branch_code}`, await getUsersRepository(branch_code))
+      if (branch_code) {
+        socketEmitRoom(branch_code, `users_${branch_code}`, await getUsersRepository(branch_code))
+      }
 
       return res.status(200).send({
         message: "Successfully updated user status.",

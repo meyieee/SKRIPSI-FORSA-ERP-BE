@@ -124,7 +124,10 @@ module.exports = {
     },
 
     updateUserRepository: async(data, id)=>{
-      await User.update(data, {where: {id}});
+      await User.update(data, {
+        where: {id},
+        individualHooks: true,
+      });
     },
   
     updateUserStatusRepository: async(status, remarks, id )=>{
