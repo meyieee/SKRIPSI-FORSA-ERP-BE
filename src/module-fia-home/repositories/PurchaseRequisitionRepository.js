@@ -198,7 +198,6 @@ async function getNewForm() {
       relevantDocs: '',
       relevantDocsSecond: '',
       location: '',
-      amount: '',
       estimatedTime: '',
       firstService: ''
     },

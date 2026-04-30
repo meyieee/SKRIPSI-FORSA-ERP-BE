@@ -835,12 +835,12 @@ function transformVisitorRequestToFrontend(backendData) {
  */
 function transformPurchaseRequisitionToBackend(frontendData) {
   const common = transformCommonFieldsToBackend(frontendData);
-  const { requestInfo, requisitionInfo } = frontendData;
+  const { requisitionInfo } = frontendData;
 
   return {
     ...common,
     // Request Info fields - Purchase Requisition specific
-    amount_request: safeParseFloat(requestInfo?.amount),
+    // amount_request SKIPPED — tidak lagi dikirim dari form FE (gunakan itemDetails / estimated total jika perlu)
     // requestInfo.estimatedTime SKIPPED - tidak ada di model
     // requestInfo.firstService SKIPPED - tidak ada di model
     // Requisition Information fields
@@ -876,7 +876,6 @@ function transformPurchaseRequisitionToFrontend(backendData) {
     },
     requestInfo: {
       ...common.requestInfo,
-      amount: backendData.amount_request ? backendData.amount_request.toString() : '',
       estimatedTime: '', // SKIPPED - not stored in database
       firstService: '' // SKIPPED - not stored in database
     },
